@@ -4,6 +4,8 @@ venv/
 
 # Python cache and bytecode
 __pycache__/
+
+*.pyc
 *.py[cod]
 
 # Tooling caches
@@ -17,4 +19,11 @@ __pycache__/
 
 # OS/editor noise
 .DS_Store
-.vscode/
+.vscode/*
+
+cat >> .gitignore << 'EOF'
+
+# Spec Kit / Copilot agent local data — may contain credentials
+.github/copilot/
+.github/.copilot/
+EOF

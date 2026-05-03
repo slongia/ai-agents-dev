@@ -6,6 +6,9 @@
     },
     "workspaceFolder": "/workspace",
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+    "mounts": [
+        "source=ai-agents-dev-gh-config,target=/home/vscode/.config,type=volume"
+    ],
     "customizations": {
         "vscode": {
             "settings": {

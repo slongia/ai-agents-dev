@@ -1,31 +1,70 @@
 #!/usr/bin/env bash
 set -e
 
-# inside container: create venv (optional) and install Python deps
+echo "=== Starting devcontainer post-create setup ==="
+
+# ---------------------------------------------------------------------------
+# Python virtual environment
+# ---------------------------------------------------------------------------
+echo "--- Setting up Python venv ---"
 python -m venv .venv
 . .venv/bin/activate
-
-# Install Python dependencies (kept inside container)
 pip install --upgrade pip
 if [ -f requirements.txt ]; then
-  pip install -r requirements.txt
-else
-  pip install pydantic pydantic-ai openai aiohttp
+    pip install -r requirements.txt
 fi
 
-# Install GitHub Copilot CLI (inside container)
-# Configure npm to use a user-local prefix to avoid permission errors
+# ---------------------------------------------------------------------------
+# npm global prefix for non-root user
+# ---------------------------------------------------------------------------
+echo "--- Configuring npm global prefix ---"
 mkdir -p "${HOME}/.npm-global"
 npm config set prefix "${HOME}/.npm-global"
 export PATH="${HOME}/.npm-global/bin:${PATH}"
-# Persist the PATH change for future shell sessions
-echo 'export PATH="${HOME}/.npm-global/bin:${PATH}"' >> "${HOME}/.bashrc"
-# package name maintained by GitHub: @githubnext/github-copilot-cli
-npm install -g @githubnext/github-copilot-cli
 
-# Install GitHub CLI (gh) for auth flows (optional)
-# Use apt or the official install script if needed
-# curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-# sudo apt update && sudo apt install gh -y
+# ---------------------------------------------------------------------------
+# Persist environment changes in .bashrc
+# Using grep -qxF to avoid duplicate entries on container rebuilds
+# ---------------------------------------------------------------------------
+echo "--- Persisting shell environment in .bashrc ---"
 
-echo "Dev container post-create finished."
+# Put npm-global FIRST on PATH (before VS Code's injected paths)
+PATH_LINE='export PATH="${HOME}/.npm-global/bin:${PATH}"'
+grep -qxF "$PATH_LINE" "${HOME}/.bashrc" || echo "$PATH_LINE" >> "${HOME}/.bashrc"
+
+# Auto-activate Python venv in new interactive shells
+VENV_LINE='[ -f /workspace/.venv/bin/activate ] && source /workspace/.venv/bin/activate'
+grep -qxF "$VENV_LINE" "${HOME}/.bashrc" || echo "$VENV_LINE" >> "${HOME}/.bashrc"
+
+# ---------------------------------------------------------------------------
+# Install GitHub Copilot CLI (official package)
+# ---------------------------------------------------------------------------
+echo "--- Installing GitHub Copilot CLI ---"
+npm install -g @github/copilot
+
+# Alias 'copilot' to the real binary so it wins over the VS Code Copilot Chat
+# wrapper that lives at ~/.vscode-server/.../copilotCli/copilot.
+# Aliases take precedence over PATH lookups in interactive shells.
+ALIAS_LINE='alias copilot="${HOME}/.npm-global/bin/copilot"'
+grep -qxF "$ALIAS_LINE" "${HOME}/.bashrc" || echo "$ALIAS_LINE" >> "${HOME}/.bashrc"
+
+# ---------------------------------------------------------------------------
+# Install GitHub Spec Kit (specify-cli) for spec-driven development
+# ---------------------------------------------------------------------------
+echo "--- Installing Spec Kit (from GitHub, not stale PyPI) ---"
+pipx ensurepath
+pipx install --force git+https://github.com/github/spec-kit.git
+
+# ---------------------------------------------------------------------------
+# Done
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Dev container post-create finished ==="
+echo ""
+echo "Next steps:"
+echo "  1. Open a NEW terminal (so .bashrc changes take effect)"
+echo "  2. Run 'copilot --version' to verify the CLI is installed"
+echo "  3. Run 'copilot' and authenticate with the device code"
+echo "  4. Run 'specify check' to verify Spec Kit is ready"
+echo "  5. This repo is already initialized for Spec Kit; do not rerun 'specify init' unless you intend to reinitialize it"
+echo ""
