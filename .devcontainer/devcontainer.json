@@ -1,0 +1,24 @@
+{
+    "name": "ai-agents-dev",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "workspaceFolder": "/workspace",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash"
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-azuretools.vscode-docker",
+                "GitHub.copilot"
+            ]
+        }
+    },
+    "postCreateCommand": "bash /workspace/.devcontainer/post_create.sh",
+    "remoteUser": "vscode"
+}
