@@ -5,6 +5,16 @@
 **Status**: Draft  
 **Input**: User description: "Build a research agent that accepts a natural-language question, breaks it into sub-questions, searches the web for each, synthesizes findings, and returns a cited markdown report. The agent should stream progress updates and handle failures gracefully."
 
+## Clarifications
+
+### Session 2026-05-03
+
+- Q: What is the maximum number of sub-questions per request? → A: 4 sub-questions maximum.
+- Q: How should the agent handle conflicting findings across sources? → A: Preserve conflicting claims with confidence notes.
+- Q: How are progress updates delivered to the caller? → A: Server-Sent Events (SSE) over HTTP.
+- Q: What is the per-sub-question search timeout? → A: 15 seconds per sub-question search.
+- Q: How should the agent handle an ambiguous or unanswerable question? → A: Attempt research and note ambiguity in the final report.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Generate a cited research report (Priority: P1)
@@ -78,14 +88,18 @@ successful findings with citations.
 
 ### Edge Cases
 
-- What happens when a user asks an overly broad or multi-part question that could
-  expand into too many sub-questions?
-- How does the system handle conflicting findings across sources covering the same
-  topic?
+- If a user asks an overly broad or multi-part question, the system MUST cap the
+  plan at 4 sub-questions and report uncovered aspects as explicit gaps.
+- When sources disagree, the agent MUST preserve all conflicting claims in the
+  report and annotate each with a confidence note or contextual qualifier rather
+  than silently discarding minority views.
 - What happens when a source is unreachable, rate-limited, or returns no useful
-  information?
+  information? Each sub-question search MUST time out after 15 seconds; on
+  timeout the sub-question is treated as failed and processing continues.
 - How does the report behave when the question contains insufficient context or is
-  too ambiguous to research effectively?
+  too ambiguous to research effectively? The agent MUST proceed with a best-effort
+  research attempt and include a clearly marked ambiguity note in the final report
+  rather than rejecting the request upfront.
 
 ## Requirements *(mandatory)*
 
@@ -93,12 +107,14 @@ successful findings with citations.
 
 - **FR-001**: The system MUST accept a natural-language research question as the
   primary input for each research run.
-- **FR-002**: The system MUST derive a bounded set of sub-questions that together
-  cover the main aspects of the user’s question.
+- **FR-002**: The system MUST derive at most 4 sub-questions per request while
+  prioritizing coverage of the main aspects of the user’s question.
 - **FR-003**: The system MUST perform external research for each sub-question and
   collect the source material used in the final response.
 - **FR-004**: The system MUST synthesize the collected findings into one markdown
-  report that answers the user’s original question.
+  report that answers the user's original question. When sources present
+  conflicting information on the same claim, the report MUST preserve both
+  positions and annotate each with a confidence note or contextual qualifier.
 - **FR-005**: The system MUST include citations in the markdown report so a user
   can trace findings back to supporting sources.
 - **FR-006**: The system MUST stream progress updates for major workflow stages,
@@ -111,6 +127,9 @@ successful findings with citations.
   gaps, and failure reasons in the final output whenever the run is incomplete.
 - **FR-010**: The system MUST return a clear failure response when no usable
   findings can be produced.
+- **FR-012**: When a research question is ambiguous or lacks sufficient context,
+  the system MUST proceed with a best-effort research attempt and include a
+  clearly marked ambiguity note in the report rather than rejecting the request.
 - **FR-011**: Users MUST be able to understand from the final output whether the
   answer is complete, partially complete, or unsuccessful.
 
@@ -119,7 +138,9 @@ successful findings with citations.
 - **TC-001**: All request, progress, source, and report data exchanged across
   workflow boundaries MUST use explicit validated schemas.
 - **TC-002**: External research work MUST support non-blocking execution so
-  progress updates remain available while searches are still running.
+  progress updates remain available while searches are still running. Progress
+  updates MUST be delivered to the caller as Server-Sent Events (SSE) over HTTP.
+  Each individual sub-question search MUST time out after 15 seconds.
 - **TC-003**: Automated verification MUST cover question decomposition, citation
   generation, progress updates, and graceful failure handling while preserving the
   repository coverage threshold.
