@@ -95,6 +95,19 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
+### Technical Constraints & Operational Requirements *(mandatory)*
+
+- **TC-001**: Define all agent inputs, outputs, and tool contracts as explicit Pydantic
+  models, or explain why a feature does not introduce boundary data.
+- **TC-002**: Describe the async execution model for external I/O and identify any HTTP
+  calls that will use aiohttp.
+- **TC-003**: Specify the pytest strategy for the feature, including how coverage remains
+  above 80%.
+- **TC-004**: Identify required environment variables, secrets boundaries, and how secret
+  values stay out of source control.
+- **TC-005**: Describe the structured logging events, fields, and failure paths needed for
+  operability.
+
 ### Key Entities *(include if feature involves data)*
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]

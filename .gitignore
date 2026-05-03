@@ -21,9 +21,6 @@ __pycache__/
 .DS_Store
 .vscode/*
 
-cat >> .gitignore << 'EOF'
-
 # Spec Kit / Copilot agent local data — may contain credentials
 .github/copilot/
 .github/.copilot/
-EOF
