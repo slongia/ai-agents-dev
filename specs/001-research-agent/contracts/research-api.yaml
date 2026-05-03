@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info:
+  title: Research Agent API
+  version: 0.1.0
+  description: >
+    HTTP contract for creating a research job, streaming progress updates over
+    SSE, and retrieving the final markdown report.
+servers:
+  - url: http://localhost:8000
+paths:
+  /research:
+    post:
+      summary: Start a research job
+      operationId: createResearchJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateResearchRequest'
+      responses:
+        '202':
+          description: Research job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResearchJobAccepted'
+        '400':
+          description: Invalid request
+  /research/{request_id}/events:
+    get:
+      summary: Stream progress events for a research job
+      operationId: streamResearchEvents
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Server-Sent Events stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                planReady:
+                  summary: Plan-ready event
+                  value: |-
+                    event: plan_ready
+                    id: 2
+                    data: {"request_id":"req_123","stage":"planning","sub_questions":[{"index":0,"text":"What is ...?"}]}
+        '404':
+          description: Unknown request id
+  /research/{request_id}/report:
+    get:
+      summary: Retrieve the final markdown report
+      operationId: getResearchReport
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Markdown report
+          content:
+            text/markdown:
+              schema:
+                type: string
+        '404':
+          description: Request id not found
+        '409':
+          description: Report not ready yet
+components:
+  schemas:
+    CreateResearchRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          minLength: 1
+          description: Natural-language research question
+    ResearchJobAccepted:
+      type: object
+      required:
+        - request_id
+        - status
+        - events_url
+        - report_url
+      properties:
+        request_id:
+          type: string
+        status:
+          type: string
+          enum: [queued]
+        events_url:
+          type: string
+          format: uri-reference
+        report_url:
+          type: string
+          format: uri-reference
+    ProgressEventEnvelope:
+      type: object
+      required:
+        - request_id
+        - stage
+        - event_type
+      properties:
+        request_id:
+          type: string
+        stage:
+          type: string
+        event_type:
+          type: string
+          enum:
+            - planning
+            - plan_ready
+            - searching
+            - subquestion_done
+            - synthesizing
+            - complete
+            - error
+    CompleteEvent:
+      allOf:
+        - $ref: '#/components/schemas/ProgressEventEnvelope'
+        - type: object
+          required:
+            - completeness
+            - report_path
+          properties:
+            completeness:
+              type: string
+              enum: [complete, partial, failed]
+            report_path:
+              type: string
+    ErrorEvent:
+      allOf:
+        - $ref: '#/components/schemas/ProgressEventEnvelope'
+        - type: object
+          required:
+            - error_type
+            - message
+          properties:
+            error_type:
+              type: string
+            message:
+              type: string
