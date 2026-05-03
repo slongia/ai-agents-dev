@@ -18,7 +18,7 @@
 -->
 
 **Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
+**Primary Dependencies**: [e.g., pydantic-ai, openai, aiohttp or NEEDS CLARIFICATION]  
 **Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
 **Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
 **Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
@@ -31,7 +31,15 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] All agent inputs, outputs, tool payloads, and boundary data are defined with typed
+      Pydantic models.
+- [ ] External I/O is async-first and HTTP integrations use aiohttp or a documented,
+      approved exception.
+- [ ] pytest coverage strategy is defined and keeps repository coverage above 80%.
+- [ ] Secrets are sourced from environment variables or a secret manager; no secrets are
+      committed, hard-coded, or copied into fixtures.
+- [ ] Structured logging covers critical agent, tool, and integration flows without
+      exposing sensitive data.
 
 ## Project Structure
 
